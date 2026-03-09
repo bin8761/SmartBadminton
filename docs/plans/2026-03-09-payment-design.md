@@ -1,7 +1,7 @@
 # Payment Flow Design (MOMO Sandbox, Open Architecture)
 
 ## Summary
-This design adds a payments module with a provider-plugin architecture. Phase 1 integrates MOMO in sandbox, while keeping abstractions open for future gateways. Payments are initiated only when the user clicks "Pay" on a `PENDING_PAYMENT` booking. Confirmation is done via webhook plus client callback (server-verified). A dedicated payment-timeout worker expires unpaid bookings after 10 minutes.
+This design adds a payments module with a provider-plugin architecture. Phase 1 integrates MOMO in sandbox, while keeping abstractions open for future gateways. Payments are initiated only when the user clicks "Pay" on a `PENDING_PAYMENT` booking. Confirmation is done via webhook plus client callback (server-verified). A dedicated payment-timeout worker expires unpaid bookings after 10 minutes. Each booking can have multiple payment attempts, but at most one active `PENDING` attempt at a time.
 
 ## Goals
 - Support payment after booking creation (user-initiated).
@@ -26,9 +26,9 @@ This design adds a payments module with a provider-plugin architecture. Phase 1 
 ## Data Model
 Introduce `PaymentTransaction`:
 - `id` (UUID)
-- `bookingId` (FK, unique)
-- `provider` (enum)
-- `status` (enum: `PENDING`, `SUCCEEDED`, `FAILED`, `EXPIRED`, `CANCELED`)
+- `bookingId` (FK)
+- `provider` (enum: `MOMO`)
+- `status` (enum: `PENDING`, `PAID`, `FAILED`, `EXPIRED`)
 - `amount`, `currency`
 - `externalOrderId`, `externalRequestId`
 - `payUrl`
@@ -36,7 +36,8 @@ Introduce `PaymentTransaction`:
 - `paidAt`, `createdAt`, `updatedAt`
 
 Relations:
-- `Booking` 1--1 `PaymentTransaction`
+- `Booking` 1--n `PaymentTransaction` (one booking, many attempts)
+- Invariant: at most one `PENDING` attempt per booking
 
 Indexes:
 - Unique: `(provider, externalOrderId)`
