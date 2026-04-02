@@ -1,0 +1,31 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/bookings/:bookingId/cancel"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  pathVariables:
+    - key: bookingId
+      value: <uuid>
+      description: "(Required) "
+  body:
+    type: json
+    content: |-
+      {
+        "reason": "<string>"
+      }
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "<string>",
+        "code": "<string>",
+        "message": "<string>"
+      }
+order: 5000

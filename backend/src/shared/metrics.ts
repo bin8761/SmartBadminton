@@ -78,5 +78,47 @@ export const bookingsExpiredCounter = new Counter({
   registers: [metricsRegistry],
 });
 
+export const bookingsCanceledCounter = new Counter({
+  name: 'bookings_canceled_total',
+  help: 'Total booking cancellation attempts by result and refund policy',
+  labelNames: ['result', 'refund_policy'],
+  registers: [metricsRegistry],
+});
+
+export const bookingsCancelDurationHistogram = new Histogram({
+  name: 'bookings_cancel_latency_ms',
+  help: 'Booking cancellation latency (milliseconds)',
+  buckets: [50, 100, 200, 400, 800, 1600, 3200],
+  registers: [metricsRegistry],
+});
+
+export const refundManualPendingCounter = new Counter({
+  name: 'refund_manual_pending_total',
+  help: 'Total refund records created in manual pending state',
+  registers: [metricsRegistry],
+});
+
+export const paymentsSuccessCounter = new Counter({
+  name: 'payments_success_total',
+  help: 'Total successful payments',
+  labelNames: ['provider', 'result'],
+  registers: [metricsRegistry],
+});
+
+export const paymentsFailureCounter = new Counter({
+  name: 'payments_failure_total',
+  help: 'Total failed payments',
+  labelNames: ['provider', 'result'],
+  registers: [metricsRegistry],
+});
+
+export const paymentsLatencyHistogram = new Histogram({
+  name: 'payments_latency_ms',
+  help: 'Payment processing latency (milliseconds)',
+  labelNames: ['provider', 'flow'],
+  buckets: [50, 100, 200, 400, 800, 1600, 3200],
+  registers: [metricsRegistry],
+});
+
 export const getMetricsSnapshot = (): Promise<string> =>
   metricsRegistry.metrics();

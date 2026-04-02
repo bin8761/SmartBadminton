@@ -1,0 +1,38 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/bookings/:bookingId/cancel"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  pathVariables:
+    - key: bookingId
+      value: <uuid>
+      description: "(Required) "
+  body:
+    type: json
+    content: |-
+      {
+        "reason": "<string>"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "<string>",
+        "data": {
+          "bookingId": "<uuid>",
+          "status": "CANCELED",
+          "canceledAt": "<dateTime>",
+          "refundPolicy": "REFUND_70",
+          "refundAmount": "<integer>",
+          "refundStatus": "PENDING_MANUAL",
+          "refundTransactionId": "<uuid>"
+        }
+      }
+order: 1000

@@ -1,0 +1,258 @@
+openapi: 3.0.3
+info:
+  title: SmartBadminton Auth API
+  version: 1.0.0
+paths:
+  /api/auth/register:
+    post:
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+                - fullName
+                - phone
+                - email
+                - role
+              properties:
+                username:
+                  type: string
+                  minLength: 6
+                  maxLength: 32
+                password:
+                  type: string
+                  minLength: 10
+                fullName:
+                  type: string
+                phone:
+                  type: string
+                  pattern: '^\d{10}$'
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum:
+                    - CUSTOMER
+                    - OWNER
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          username:
+                            type: string
+                          fullName:
+                            type: string
+                          phone:
+                            type: string
+                          email:
+                            type: string
+                            format: email
+                          role:
+                            type: string
+                      tokens:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+        '409':
+          description: Duplicate data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                usernameTaken:
+                  value:
+                    status: error
+                    code: USERNAME_TAKEN
+                    message: T�n ��ng nh?p �? t?n t?i
+                phoneDuplicated:
+                  value:
+                    status: error
+                    code: PHONE_DUPLICATED
+                    message: S? �i?n tho?i �? t?n t?i
+                emailDuplicated:
+                  value:
+                    status: error
+                    code: EMAIL_DUPLICATED
+                    message: Email �? t?n t?i
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginValidationError:
+                  value:
+                    status: error
+                    code: VALIDATION_ERROR
+                    message: Du lieu khong hop le
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginRateLimited:
+                  value:
+                    status: error
+                    code: RATE_LIMITED
+                    message: Too many requests, please try again later.
+              example:
+                status: error
+                code: RATE_LIMITED
+                message: Too many requests, please try again later.
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginInternalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Dang nhap that bai
+  /api/auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 6
+                  maxLength: 32
+                password:
+                  type: string
+                  minLength: 10
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          username:
+                            type: string
+                          fullName:
+                            type: string
+                          phone:
+                            type: string
+                          email:
+                            type: string
+                            format: email
+                          role:
+                            type: string
+                      tokens:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginValidationError:
+                  value:
+                    status: error
+                    code: VALIDATION_ERROR
+                    message: Du lieu khong hop le
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginInvalidCredentials:
+                  value:
+                    status: error
+                    code: INVALID_CREDENTIALS
+                    message: Invalid login credentials
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginRateLimited:
+                  value:
+                    status: error
+                    code: RATE_LIMITED
+                    message: Too many requests, please try again later.
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginInternalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Dang nhap that bai
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        code:
+          type: string
+        message:
+          type: string

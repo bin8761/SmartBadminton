@@ -1,0 +1,15 @@
+# Use this workspace to collaborate
+workspace:
+  id: ee6b2212-30f4-4ae6-8486-ebe702483ce9
+
+localResources:
+  specs:
+    - ..\docs\api\auth.yaml
+    - ..\docs\api\bookings.yaml
+    - ..\docs\api\courts.yaml
+    - ..\docs\api\payments.yaml
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+cloudResources:
+  collections:
+    ..\postman\collections\SmartBadminton API: 3a8bcefb-c049-484e-9715-4ff1f20aa90a

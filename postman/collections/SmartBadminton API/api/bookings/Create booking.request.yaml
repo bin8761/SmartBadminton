@@ -1,0 +1,41 @@
+$kind: http-request
+name: Create booking
+url: "{{baseUrl }}/api/bookings"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: Bearer {{accessToken}}
+body:
+  type: json
+  content: |
+    {
+      "courtId": "{{courtId}}",
+      "startTime": "{{date}}T{{startTime}}:00+07:00",
+      "endTime": "{{date}}T{{endTime}}:00+07:00"
+    }
+scripts:
+  - type: afterResponse
+    code: "if (pm.response.code >= 200 && pm.response.code < 300) {\r
+
+      \  let json = null;\r
+
+      \  try { json = pm.response.json(); } catch (e) {}\r
+
+      \  if (json && json.data) {\r
+
+      \    if (json.data.id) pm.collectionVariables.set(\"bookingId\",
+      json.data.id);\r
+
+      \    if (json.data.courtId) pm.collectionVariables.set(\"courtId\",
+      json.data.courtId);\r
+
+      \    if (json.data.status) pm.collectionVariables.set(\"bookingStatus\",
+      json.data.status);\r
+
+      \  }\r
+
+      }\r\n"
+    language: text/javascript
+examples: ./.resources/Create booking.resources/examples
+order: 2000

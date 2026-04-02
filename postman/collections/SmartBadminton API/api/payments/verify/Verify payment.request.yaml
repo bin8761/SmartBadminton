@@ -1,0 +1,18 @@
+$kind: http-request
+name: Verify payment
+url: "{{baseUrl}}/api/payments/verify"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: Bearer {{accessToken}}
+body:
+  type: json
+  content: |-
+    {
+      "bookingId": "{{bookingId}}"
+    }
+auth:
+  type: noauth
+examples: ./.resources/Verify payment.resources/examples
+order: 1000

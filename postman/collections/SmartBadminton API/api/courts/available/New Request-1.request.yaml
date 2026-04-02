@@ -1,0 +1,10 @@
+$kind: http-request
+name: New Request
+url: "{{baseUrl}}/api/courts/available?date=2026-01-25&startTime=06:00&endTime=\
+  09:00"
+method: GET
+queryParams:
+  date: 2026-01-25
+  startTime: 06:00
+  endTime: 09:00
+order: 4128843423502271

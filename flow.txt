@@ -1,0 +1,8 @@
+Spec / Requirements
+Review & sign‑off (chốt phạm vi, out‑of‑scope)
+Thiết kế chi tiết (data model, API contract, flow)
+TDD/BDD (test cases, acceptance criteria)
+Task breakdown (tách việc bám theo spec + test)
+Implementation
+Test/QA
+Release & feedback

@@ -5,74 +5,48 @@ info:
 paths:
   /api/courts/available:
     get:
+      tags:
+        - Courts
+      operationId: getAvailableCourts
       summary: Get available courts
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: date
           required: true
-          schema:
-            type: string
-            format: date
-            example: 2026-01-25
+          example: 2026-01-25
         - in: query
           name: startTime
           required: true
-          schema:
-            type: string
-            pattern: '^([01]\d|2[0-3]):([0-5]\d)$'
-            example: '06:00'
+          example: '06:00'
         - in: query
           name: endTime
           required: true
-          schema:
-            type: string
-            pattern: '^([01]\d|2[0-3]):([0-5]\d)$'
-            example: '09:00'
+          example: '09:00'
       responses:
         '200':
           description: Available courts
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: object
-                    properties:
-                      date:
-                        type: string
-                        format: date
-                      startTime:
-                        type: string
-                      endTime:
-                        type: string
-                      durationMinutes:
-                        type: integer
+              examples:
+                success:
+                  value:
+                    status: success
+                    data:
+                      date: 2026-01-25
+                      startTime: '06:00'
+                      endTime: '09:00'
+                      durationMinutes: 180
                       courts:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                            name:
-                              type: string
-                            type:
-                              type: string
-                              enum:
-                                - SINGLE
-                                - DOUBLE
-                            basePrice:
-                              type: integer
+                        - id: 11111111-1111-1111-1111-111111111111
+                          name: San so 1
+                          type: SINGLE
+                          basePrice: 120000
         '400':
           description: Validation error
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 validationError:
                   value:
@@ -83,8 +57,6 @@ paths:
           description: Unauthorized
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 unauthorized:
                   value:
@@ -95,8 +67,6 @@ paths:
           description: Forbidden
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 forbidden:
                   value:
@@ -107,8 +77,6 @@ paths:
           description: No available courts
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 noAvailableCourts:
                   value:
@@ -119,8 +87,6 @@ paths:
           description: Server error
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 internalError:
                   value:
@@ -128,14 +94,8 @@ paths:
                     code: INTERNAL_ERROR
                     message: Khong the lay danh sach san
 components:
-  schemas:
-    ErrorResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: error
-        code:
-          type: string
-        message:
-          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

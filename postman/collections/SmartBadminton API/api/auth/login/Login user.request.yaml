@@ -1,0 +1,48 @@
+$kind: http-request
+name: Login user
+url: "{{baseUrl }}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "customer.seed",
+      "password": "Password123!"
+    }
+scripts:
+  - type: afterResponse
+    code: "if (pm.response.code >= 200 && pm.response.code < 300) {\r
+
+      \  let json = null;\r
+
+      \  try { json = pm.response.json(); } catch (e) {}\r
+
+      \  if (json && json.data && json.data.tokens) {\r
+
+      \    if (json.data.tokens.accessToken)
+      pm.collectionVariables.set(\"accessToken\",
+      json.data.tokens.accessToken);\r
+
+      \    if (json.data.tokens.refreshToken)
+      pm.collectionVariables.set(\"refreshToken\",
+      json.data.tokens.refreshToken);\r
+
+      \  }\r
+
+      \  if (json && json.data && json.data.user) {\r
+
+      \    if (json.data.user.id) pm.collectionVariables.set(\"userId\",
+      json.data.user.id);\r
+
+      \    if (json.data.user.username) pm.collectionVariables.set(\"username\",
+      json.data.user.username);\r
+
+      \  }\r
+
+      }\r\n"
+    language: text/javascript
+examples: ./.resources/Login user.resources/examples
+order: 1000

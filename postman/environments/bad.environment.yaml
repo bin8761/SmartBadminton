@@ -1,0 +1,5 @@
+name: bad
+values:
+  - key: 'baseUrl '
+    value: ''
+    enabled: true

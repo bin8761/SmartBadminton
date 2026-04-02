@@ -1,0 +1,38 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/payments/webhooks/sepay"
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: application/json
+    - key: Authorization
+      value: <API Key>
+      description: "Added as a part of security scheme: apikey"
+  body:
+    type: json
+    content: |-
+      {
+        "payment_code": "<string>",
+        "content": "<string>",
+        "transaction_content": "<string>",
+        "amount": "<number>",
+        "transfer_type": "<string>",
+        "transaction_id": "<number>",
+        "transaction_date": "<string>"
+      }
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "<string>",
+        "code": "<string>",
+        "message": "<string>"
+      }
+order: 3000

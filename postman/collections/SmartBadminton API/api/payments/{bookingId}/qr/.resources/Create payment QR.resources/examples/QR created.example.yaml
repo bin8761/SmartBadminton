@@ -1,0 +1,31 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/payments/:bookingId/qr"
+  method: POST
+  headers:
+    - key: Accept
+      value: application/json
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    - key: bookingId
+      value: <uuid>
+      description: "(Required) "
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "<string>",
+        "data": {
+          "paymentTransactionId": "<uuid>",
+          "qrString": "<string>",
+          "expiresAt": "<dateTime>"
+        }
+      }
+order: 1000

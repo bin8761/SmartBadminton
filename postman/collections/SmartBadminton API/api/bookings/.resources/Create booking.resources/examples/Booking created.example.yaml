@@ -1,0 +1,41 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/bookings"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "courtId": "<uuid>",
+        "startTime": "<dateTime>",
+        "endTime": "<dateTime>"
+      }
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "<string>",
+        "data": {
+          "id": "<uuid>",
+          "courtId": "<uuid>",
+          "userId": "<uuid>",
+          "startTime": "<dateTime>",
+          "endTime": "<dateTime>",
+          "durationMinutes": "<integer>",
+          "unitPrice": "<integer>",
+          "totalPrice": "<integer>",
+          "status": "PAID",
+          "expiresAt": "<dateTime>",
+          "createdAt": "<dateTime>",
+          "updatedAt": "<dateTime>"
+        }
+      }
+order: 1000

@@ -3,14 +3,14 @@ import { hashPassword } from "../src/shared/hash";
 
 const prisma = new PrismaClient();
 
-const buildDateTime = (date: string, time: string): Date =>
-  new Date(`${date}T${time}:00+07:00`);
-
 const toMinutes = (start: Date, end: Date): number =>
   Math.round((end.getTime() - start.getTime()) / 60000);
 
 const addMinutes = (time: Date, minutes: number): Date =>
   new Date(time.getTime() + minutes * 60000);
+
+const addHours = (time: Date, hours: number): Date =>
+  new Date(time.getTime() + hours * 60 * 60000);
 
 const seed = async () => {
   const existingCourts = await prisma.court.count();
@@ -33,8 +33,7 @@ const seed = async () => {
     return;
   }
 
-  const today = new Date();
-  const date = today.toISOString().slice(0, 10);
+  const now = new Date();
 
   const courtA = createdCourts[0];
   const courtB = createdCourts[1] ?? createdCourts[0];
@@ -65,21 +64,24 @@ const seed = async () => {
   const bookingSlots = [
     {
       courtId: courtA.id,
-      startTime: buildDateTime(date, "06:00"),
-      endTime: buildDateTime(date, "08:00"),
+      // Cancel >=24h before startTime => refund 70%
+      startTime: addHours(now, 30),
+      endTime: addHours(now, 32),
       status: BookingStatus.PAID,
     },
     {
       courtId: courtB.id,
-      startTime: buildDateTime(date, "09:00"),
-      endTime: buildDateTime(date, "10:30"),
-      status: BookingStatus.PENDING_PAYMENT,
+      // Cancel <24h before startTime => no refund
+      startTime: addHours(now, 12),
+      endTime: addHours(now, 13.5),
+      status: BookingStatus.PAID,
     },
     {
       courtId: courtB.id,
-      startTime: buildDateTime(date, "12:00"),
-      endTime: buildDateTime(date, "13:00"),
-      status: BookingStatus.CANCELED,
+      // Non-cancellable status sample
+      startTime: addHours(now, 36),
+      endTime: addHours(now, 37),
+      status: BookingStatus.PENDING_PAYMENT,
     },
   ];
 

@@ -1,0 +1,944 @@
+openapi: 3.0.3
+info:
+  title: SmartBadminton API
+  version: 1.0.0
+paths:
+  /api/auth/register:
+    post:
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+                - fullName
+                - phone
+                - email
+                - role
+              properties:
+                username:
+                  type: string
+                  minLength: 6
+                  maxLength: 32
+                password:
+                  type: string
+                  minLength: 10
+                fullName:
+                  type: string
+                phone:
+                  type: string
+                  pattern: '^\d{10}$'
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum:
+                    - CUSTOMER
+                    - OWNER
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          username:
+                            type: string
+                          fullName:
+                            type: string
+                          phone:
+                            type: string
+                          email:
+                            type: string
+                            format: email
+                          role:
+                            type: string
+                      tokens:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+        '409':
+          description: Duplicate data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                usernameTaken:
+                  value:
+                    status: error
+                    code: USERNAME_TAKEN
+                    message: T?n ??ng nh?p ?? t?n t?i
+                phoneDuplicated:
+                  value:
+                    status: error
+                    code: PHONE_DUPLICATED
+                    message: S? ?i?n tho?i ?? t?n t?i
+                emailDuplicated:
+                  value:
+                    status: error
+                    code: EMAIL_DUPLICATED
+                    message: Email ?? t?n t?i
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginValidationError:
+                  value:
+                    status: error
+                    code: VALIDATION_ERROR
+                    message: Du lieu khong hop le
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginRateLimited:
+                  value:
+                    status: error
+                    code: RATE_LIMITED
+                    message: Too many requests, please try again later.
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginInternalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Dang nhap that bai
+  /api/auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 6
+                  maxLength: 32
+                password:
+                  type: string
+                  minLength: 10
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          username:
+                            type: string
+                          fullName:
+                            type: string
+                          phone:
+                            type: string
+                          email:
+                            type: string
+                            format: email
+                          role:
+                            type: string
+                      tokens:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginValidationError:
+                  value:
+                    status: error
+                    code: VALIDATION_ERROR
+                    message: Du lieu khong hop le
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginInvalidCredentials:
+                  value:
+                    status: error
+                    code: INVALID_CREDENTIALS
+                    message: Invalid login credentials
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginRateLimited:
+                  value:
+                    status: error
+                    code: RATE_LIMITED
+                    message: Too many requests, please try again later.
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                loginInternalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Dang nhap that bai
+  /api/bookings:
+    post:
+      summary: Create booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - courtId
+                - startTime
+                - endTime
+              properties:
+                courtId:
+                  type: string
+                  format: uuid
+                startTime:
+                  type: string
+                  format: date-time
+                  example: 2026-01-30T09:00:00.000Z
+                endTime:
+                  type: string
+                  format: date-time
+                  example: 2026-01-30T10:30:00.000Z
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      courtId:
+                        type: string
+                        format: uuid
+                      userId:
+                        type: string
+                        format: uuid
+                      startTime:
+                        type: string
+                        format: date-time
+                      endTime:
+                        type: string
+                        format: date-time
+                      durationMinutes:
+                        type: integer
+                      unitPrice:
+                        type: integer
+                      totalPrice:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                          - PENDING_PAYMENT
+                          - PAID
+                          - CANCELED
+                          - EXPIRED
+                      expiresAt:
+                        type: string
+                        format: date-time
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
+                        type: string
+                        format: date-time
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  value:
+                    status: error
+                    code: VALIDATION_ERROR
+                    message: Du lieu khong hop le
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  value:
+                    status: error
+                    code: UNAUTHORIZED
+                    message: Chua dang nhap
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  value:
+                    status: error
+                    code: FORBIDDEN
+                    message: Khong co quyen truy cap
+        '404':
+          description: Court not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                courtNotFound:
+                  value:
+                    status: error
+                    code: COURT_NOT_FOUND
+                    message: San khong ton tai
+        '409':
+          description: Booking overlap
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                bookingOverlap:
+                  value:
+                    status: error
+                    code: BOOKING_OVERLAP
+                    message: San da duoc dat trong khung gio nay
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rateLimited:
+                  value:
+                    status: error
+                    code: RATE_LIMITED
+                    message: Too many requests, please try again later.
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Khong the tao booking
+  /api/bookings/{bookingId}/cancel:
+    post:
+      summary: Cancel booking
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  minLength: 10
+                  maxLength: 500
+                  example: Ban viec dot xuat, khong the den san
+      responses:
+        '200':
+          description: Booking canceled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      bookingId:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        enum:
+                          - CANCELED
+                      canceledAt:
+                        type: string
+                        format: date-time
+                      refundPolicy:
+                        type: string
+                        enum:
+                          - REFUND_70
+                          - NO_REFUND
+                      refundAmount:
+                        type: integer
+                        example: 0
+                      refundStatus:
+                        type: string
+                        enum:
+                          - PENDING_MANUAL
+                          - COMPLETED_MANUAL
+                          - REJECTED_MANUAL
+                      refundTransactionId:
+                        type: string
+                        format: uuid
+        '400':
+          description: Invalid cancel payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCancelReason:
+                  value:
+                    status: error
+                    code: INVALID_CANCEL_REASON
+                    message: Du lieu khong hop le
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  value:
+                    status: error
+                    code: UNAUTHORIZED
+                    message: Chua dang nhap
+        '403':
+          description: Not owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                bookingNotOwned:
+                  value:
+                    status: error
+                    code: BOOKING_NOT_OWNED
+                    message: Don dat san khong thuoc nguoi dung hien tai
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                bookingNotFound:
+                  value:
+                    status: error
+                    code: BOOKING_NOT_FOUND
+                    message: Khong tim thay don dat san
+        '409':
+          description: Booking cannot be canceled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                bookingAlreadyCanceled:
+                  value:
+                    status: error
+                    code: BOOKING_ALREADY_CANCELED
+                    message: Don dat san da duoc huy
+                bookingStatusNotCancellable:
+                  value:
+                    status: error
+                    code: BOOKING_STATUS_NOT_CANCELLABLE
+                    message: Trang thai don dat san khong cho phep huy
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Khong the huy booking
+  /api/courts/available:
+    get:
+      operationId: getAvailableCourts
+      summary: Get available courts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          example: 2026-01-25
+        - in: query
+          name: startTime
+          required: true
+          schema:
+            type: string
+          example: '06:00'
+        - in: query
+          name: endTime
+          required: true
+          schema:
+            type: string
+          example: '09:00'
+      responses:
+        '200':
+          description: Available courts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      date:
+                        type: string
+                        format: date
+                      startTime:
+                        type: string
+                      endTime:
+                        type: string
+                      durationMinutes:
+                        type: integer
+                      courts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            type:
+                              type: string
+                            basePrice:
+                              type: integer
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No available courts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/payments/{bookingId}/qr:
+    post:
+      summary: Create payment QR
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: QR created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      paymentTransactionId:
+                        type: string
+                        format: uuid
+                      qrString:
+                        type: string
+                      expiresAt:
+                        type: string
+                        format: date-time
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  value:
+                    status: error
+                    code: VALIDATION_ERROR
+                    message: Du lieu khong hop le
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  value:
+                    status: error
+                    code: UNAUTHORIZED
+                    message: Chua dang nhap
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  value:
+                    status: error
+                    code: FORBIDDEN
+                    message: Khong co quyen truy cap
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                bookingNotFound:
+                  value:
+                    status: error
+                    code: BOOKING_NOT_FOUND
+                    message: Khong tim thay don dat
+        '409':
+          description: Booking status not payable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                bookingStatusNotPayable:
+                  value:
+                    status: error
+                    code: BOOKING_STATUS_NOT_PAYABLE
+                    message: Trang thai don dat san khong cho phep thanh toan
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Khong the tao QR thanh toan
+  /api/payments/verify:
+    post:
+      summary: Verify payment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bookingId
+              properties:
+                bookingId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Payment verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      paymentTransactionId:
+                        type: string
+                        format: uuid
+                        nullable: true
+                      paymentStatus:
+                        type: string
+                        enum:
+                          - PAID
+                          - FAILED
+                          - PENDING
+                          - EXPIRED
+                      paidAt:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      provider:
+                        type: string
+                        nullable: true
+                      amount:
+                        type: integer
+                        nullable: true
+                      currency:
+                        type: string
+                        nullable: true
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  value:
+                    status: error
+                    code: VALIDATION_ERROR
+                    message: Du lieu khong hop le
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  value:
+                    status: error
+                    code: UNAUTHORIZED
+                    message: Chua dang nhap
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  value:
+                    status: error
+                    code: FORBIDDEN
+                    message: Khong co quyen truy cap
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                userNotFound:
+                  value:
+                    status: error
+                    code: USER_NOT_FOUND
+                    message: Nguoi dung khong ton tai
+                bookingNotFound:
+                  value:
+                    status: error
+                    code: BOOKING_NOT_FOUND
+                    message: Khong tim thay don dat
+                paymentNotFound:
+                  value:
+                    status: error
+                    code: PAYMENT_NOT_FOUND
+                    message: Khong tim thay thanh toan
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Khong the xac minh thanh toan
+  /api/payments/webhooks/sepay:
+    post:
+      summary: SePay webhook
+      security:
+        - sepayApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_code:
+                  type: string
+                  nullable: true
+                content:
+                  type: string
+                  nullable: true
+                transaction_content:
+                  type: string
+                  nullable: true
+                amount:
+                  oneOf:
+                    - type: number
+                    - type: string
+                  nullable: true
+                transfer_type:
+                  type: string
+                  nullable: true
+                transaction_id:
+                  oneOf:
+                    - type: number
+                    - type: string
+                  nullable: true
+                transaction_date:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Webhook received
+        '401':
+          description: Invalid signature
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Khong the xu ly webhook
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    sepayApiKey:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 'Apikey <SEPAY_IPN_API_KEY>'
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        code:
+          type: string
+        message:
+          type: string

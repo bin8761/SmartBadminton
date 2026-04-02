@@ -4,6 +4,7 @@ import morgan from "morgan";
 import authRouter from "./routes/auth.routes";
 import courtRouter from "./routes/court.routes";
 import bookingRouter from "./routes/booking.routes";
+import paymentRouter from "./routes/payment.routes";
 const enableWorker = process.env.BOOKING_EXPIRE_WORKER === "true";
 if (enableWorker) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -23,6 +24,7 @@ app.use(responseMiddleware);
 app.use("/api/auth", authRouter);
 app.use("/api/courts", courtRouter);
 app.use("/api/bookings", bookingRouter);
+app.use("/api/payments", paymentRouter);
 
 const port = config.port;
 

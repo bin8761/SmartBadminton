@@ -26,6 +26,25 @@ export type AppConfig = {
   };
   booking: {
     expireMinutes: number;
+    cancel: {
+      refundRate: number;
+      minHoursForRefund: number;
+      timezone: string;
+    };
+  };
+  payment: {
+    timeoutMinutes: number;
+    sepay: {
+      merchantId?: string;
+      secretKey?: string;
+      apiBaseUrl?: string;
+      apiToken?: string;
+      webhookSecret?: string;
+      ipnApiKey?: string;
+      bankAccount?: string;
+      bankName?: string;
+      qrExpireMinutes: number;
+    };
   };
 };
 
@@ -118,6 +137,28 @@ const config: AppConfig = {
   },
   booking: {
     expireMinutes: toNumber(process.env.BOOKING_EXPIRE_MINUTES, 15),
+    cancel: {
+      refundRate: toNumber(process.env.BOOKING_CANCEL_REFUND_RATE, 0.7),
+      minHoursForRefund: toNumber(
+        process.env.BOOKING_CANCEL_MIN_HOURS_FOR_REFUND,
+        24,
+      ),
+      timezone: process.env.BOOKING_CANCEL_TIMEZONE ?? 'Asia/Ho_Chi_Minh',
+    },
+  },
+  payment: {
+    timeoutMinutes: toNumber(process.env.PAYMENT_TIMEOUT_MINUTES, 10),
+    sepay: {
+      merchantId: process.env.SEPAY_MERCHANT_ID,
+      secretKey: process.env.SEPAY_SECRET_KEY,
+      apiBaseUrl: process.env.SEPAY_API_BASE_URL,
+      apiToken: process.env.SEPAY_API_TOKEN,
+      webhookSecret: process.env.SEPAY_WEBHOOK_SECRET,
+      ipnApiKey: process.env.SEPAY_IPN_API_KEY,
+      bankAccount: process.env.SEPAY_BANK_ACCOUNT,
+      bankName: process.env.SEPAY_BANK_NAME,
+      qrExpireMinutes: toNumber(process.env.SEPAY_QR_EXPIRE_MINUTES, 10),
+    },
   },
 };
 

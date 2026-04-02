@@ -11,6 +11,7 @@
     "prisma:generate": "prisma generate",
     "dev": "ts-node src/app.ts",
     "worker:booking-expire": "ts-node src/workers/booking-expire.runner.ts",
+    "worker:payment-timeout": "ts-node src/workers/payment-timeout.runner.ts",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",

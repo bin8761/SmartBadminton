@@ -1,3 +1,11 @@
 docker run --name smartbadminton-postgres -e POSTGRES_PASSWORD=admin123 -p 5432:5432 -d postgres:15
 
 docker compose up -d postgres
+
+docker compose up
+
+git restore --staged .gitignore CONTINUITY.md docs/script.txt
+
+bạn hãy đọc rule continuity-ledger-rule.mdc  và áp dụng mỗi khi tôi gửi yêu cầu cho bạn
+
+.\ngrok.exe http 3000

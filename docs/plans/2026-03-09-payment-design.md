@@ -1,38 +1,39 @@
-# Payment Flow Design (MOMO Sandbox, Open Architecture)
+﻿# Payment Flow Design (SePay QR Dynamic, In-App)
 
 ## Summary
-This design adds a payments module with a provider-plugin architecture. Phase 1 integrates MOMO in sandbox, while keeping abstractions open for future gateways. Payments are initiated only when the user clicks "Pay" on a `PENDING_PAYMENT` booking. Confirmation is done via webhook plus client callback (server-verified). A dedicated payment-timeout worker expires unpaid bookings after 10 minutes. Each booking can have multiple payment attempts, but at most one active `PENDING` attempt at a time.
+This design adds a payments module with a provider-plugin architecture. Phase 1 integrates SePay QR dynamic (in-app), while keeping abstractions open for future gateways. Payments are initiated only when the user clicks "Pay" on a `PENDING_PAYMENT` booking. Confirmation is done via webhook plus client verify (server-verified). A dedicated payment-timeout worker expires unpaid bookings after 10 minutes. Each booking can have multiple payment attempts, but at most one active `PENDING` attempt at a time.
 
 ## Goals
 - Support payment after booking creation (user-initiated).
-- MOMO sandbox first, but architecture open for multiple gateways.
+- SePay QR dynamic first, but architecture open for multiple gateways.
 - Reliable confirmation via webhook and server verification.
 - Clear logging to pinpoint errors in the flow.
 - Separate payment timeout worker for scale and SRP.
 
 ## Non-Goals
-- Production MOMO integration in this phase.
-- Implementing other gateways (ZaloPay/VNPAY/Stripe) now.
+- Implementing SePay Payment Gateway (redirect) in this phase.
+- Implementing other gateways now.
 - Real-time refunds automation (manual handling only if conflict occurs).
 
 ## Architecture
 - New module `payments` with controller/service/repo/validators/types.
 - `PaymentProvider` interface and `PaymentProviderRegistry`.
-- MOMO adapter implements `PaymentProvider`.
-- Webhook route per provider: `/api/payments/webhooks/momo`.
-- Client callback verify route: `/api/payments/verify`.
+- SePay QR adapter implements `PaymentProvider`.
+- Webhook route per provider: `/api/payments/webhooks/sepay`.
+- Client verify route: `/api/payments/verify`.
 - Dedicated `payment-timeout` worker/queue.
 
 ## Data Model
 Introduce `PaymentTransaction`:
 - `id` (UUID)
 - `bookingId` (FK)
-- `provider` (enum: `MOMO`)
+- `provider` (enum: `SEPAY`)
 - `status` (enum: `PENDING`, `PAID`, `FAILED`, `EXPIRED`)
 - `amount`, `currency`
 - `externalOrderId`, `externalRequestId`
-- `payUrl`
-- `meta` (JSON, provider-specific)
+- `payUrl` (nullable for QR flow)
+- `qrString` (nullable, QR content for in-app display)
+- `meta` (JSON, provider-specific, store extra refs)
 - `paidAt`, `createdAt`, `updatedAt`
 
 Relations:
@@ -44,16 +45,16 @@ Indexes:
 - Index: `(status, createdAt)`
 
 ## API & Flow
-1) Create payment session
-- `POST /api/payments/:bookingId/session`
+1) Create payment QR
+- `POST /api/payments/:bookingId/qr`
 - Preconditions: booking is `PENDING_PAYMENT`, owner matches.
-- Response: `paymentUrl`, `paymentTransactionId`, `expiresAt`.
+- Response: `qrString`, `paymentTransactionId`, `expiresAt`.
 
 2) Webhook
-- `POST /api/payments/webhooks/momo`
+- `POST /api/payments/webhooks/sepay`
 - Validate signature; update `PaymentTransaction` and `Booking`.
 
-3) Client callback verify
+3) Client verify
 - `POST /api/payments/verify`
 - Server verifies with provider; update status.
 
@@ -77,8 +78,7 @@ Indexes:
 ## Logging/Observability
 - Correlation ID for end-to-end flow (use `bookingId` or `paymentFlowId`).
 - Event logs:
-  - `payment_session_created`
-  - `payment_redirected`
+  - `payment_qr_created`
   - `payment_webhook_received`
   - `payment_verified`
   - `payment_succeeded`
@@ -92,8 +92,20 @@ Indexes:
 
 ## Testing
 - Unit: provider selection, state transitions.
-- Integration: session creation, webhook success, timeout expiry.
+- Integration: QR creation, webhook success, timeout expiry.
 - Contract/OpenAPI updates for payment endpoints.
 
 ## Open Questions
-- None for Phase 1 (MOMO sandbox, open architecture).
+- None for Phase 1 (SePay QR dynamic).
+
+## Env Vars
+- `PAYMENT_TIMEOUT_MINUTES`
+- `SEPAY_MERCHANT_ID`
+- `SEPAY_SECRET_KEY`
+- `SEPAY_API_BASE_URL`
+- `SEPAY_WEBHOOK_SECRET` (if required)
+- `SEPAY_IPN_API_KEY`
+- `SEPAY_BANK_ACCOUNT`
+- `SEPAY_BANK_NAME`
+- `SEPAY_API_TOKEN` (if using verify API)
+- `SEPAY_QR_EXPIRE_MINUTES` (if required)

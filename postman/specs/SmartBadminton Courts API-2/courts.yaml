@@ -1,0 +1,141 @@
+openapi: 3.0.3
+info:
+  title: SmartBadminton Courts API
+  version: 1.0.0
+paths:
+  /api/courts/available:
+    get:
+      summary: Get available courts
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+            example: 2026-01-25
+        - in: query
+          name: startTime
+          required: true
+          schema:
+            type: string
+            pattern: '^([01]\d|2[0-3]):([0-5]\d)$'
+            example: '06:00'
+        - in: query
+          name: endTime
+          required: true
+          schema:
+            type: string
+            pattern: '^([01]\d|2[0-3]):([0-5]\d)$'
+            example: '09:00'
+      responses:
+        '200':
+          description: Available courts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      date:
+                        type: string
+                        format: date
+                      startTime:
+                        type: string
+                      endTime:
+                        type: string
+                      durationMinutes:
+                        type: integer
+                      courts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                              enum:
+                                - SINGLE
+                                - DOUBLE
+                            basePrice:
+                              type: integer
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  value:
+                    status: error
+                    code: VALIDATION_ERROR
+                    message: Du lieu khong hop le
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  value:
+                    status: error
+                    code: UNAUTHORIZED
+                    message: Chua dang nhap
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  value:
+                    status: error
+                    code: FORBIDDEN
+                    message: Khong co quyen truy cap
+        '404':
+          description: No available courts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noAvailableCourts:
+                  value:
+                    status: error
+                    code: NO_AVAILABLE_COURTS
+                    message: Khong co san phu hop trong khung gio da chon
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  value:
+                    status: error
+                    code: INTERNAL_ERROR
+                    message: Khong the lay danh sach san
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        code:
+          type: string
+        message:
+          type: string

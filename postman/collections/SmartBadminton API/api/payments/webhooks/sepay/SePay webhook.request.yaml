@@ -1,0 +1,23 @@
+$kind: http-request
+name: SePay webhook
+url: "{{baseUrl }}/api/payments/webhooks/sepay"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: Apikey sb-webhook-2026-03-22-a9f2c7e1
+body:
+  type: json
+  content: |-
+    {
+      "content": "SB_{{bookingId}}",
+      "transaction_content": "SB_{{bookingId}}",
+      "amount": 360000,
+      "transfer_type": "credit",
+      "transaction_id": "{{paymentTransactionId}}",
+      "transaction_date": "2026-03-26 11:01:00"
+    }
+auth:
+  type: noauth
+examples: ./.resources/SePay webhook.resources/examples
+order: 1000

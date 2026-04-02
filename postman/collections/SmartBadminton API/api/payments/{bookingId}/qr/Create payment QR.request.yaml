@@ -1,0 +1,43 @@
+$kind: http-request
+name: Create payment QR
+url: "{{baseUrl }}/api/payments/:bookingId/qr"
+method: POST
+headers:
+  Accept: application/json
+pathVariables:
+  - key: bookingId
+    value: "{{bookingId}}"
+    description: "(Required) "
+body:
+  type: json
+  content: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
+scripts:
+  - type: afterResponse
+    code: "if (pm.response.code >= 200 && pm.response.code < 300) {\r
+
+      \  let json = null;\r
+
+      \  try { json = pm.response.json(); } catch (e) {}\r
+
+      \  if (json && json.data) {\r
+
+      \    if (json.data.paymentTransactionId)
+      pm.collectionVariables.set(\"paymentTransactionId\",
+      json.data.paymentTransactionId);\r
+
+      \    if (json.data.qrString)
+      pm.collectionVariables.set(\"paymentQrString\", json.data.qrString);\r
+
+      \    if (json.data.expiresAt)
+      pm.collectionVariables.set(\"paymentExpiresAt\", json.data.expiresAt);\r
+
+      \  }\r
+
+      }\r\n"
+    language: text/javascript
+examples: ./.resources/Create payment QR.resources/examples
+order: 1000

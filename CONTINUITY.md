@@ -1,111 +1,341 @@
-Goal (incl. success criteria):
-- Support SmartBadminton documentation/tasks while enforcing rule set (esp. technical/design docs) and keeping ledger current.
+﻿Goal (incl. success criteria):
+- Support SmartBadminton work per rules, keep ledger current.
+- New: design payment-after-booking flow (MOMO candidate) before implementation.
 
 Constraints/Assumptions:
-- Must always apply rule documents under `C:\Users\yasuo\Desktop\SmartBadminton\rule`.
-- Continuity ledger must be maintained per instructions.
-- Begin each reply with a brief “Ledger Snapshot” (Goal + Now/Next + Open Questions).
-- Work exclusively within `C:\Users\yasuo\Desktop\SmartBadminton` workspace.
-- Replies must be in Vietnamese.
-- Do not run DB/migration/server commands autonomously; request user execution when needed.
-- When user provides the Implementation/Task/TDD structure from rule, that is approval to proceed.
+- Apply all rules under `C:\Users\yasuo\Desktop\SmartBadminton\rule`.
+- Update ledger every turn; begin replies with Ledger Snapshot (Goal + Now/Next + Open Questions).
+- Apply `continuity-ledger-rule.mdc` for each user request.
+- Work only within `C:\Users\yasuo\Desktop\SmartBadminton`.
+- Replies in Vietnamese.
+- Do not run DB/migration/server commands autonomously; ask user to run.
+- Do not run Prisma commands locally; user will run all Prisma CLI commands.
+- When user provides Implementation/Task/TDD structure, that is approval to proceed (no separate confirmation needed).
 
 Key decisions:
-- Ledger/rule compliance established; registration TDD + task breakdown completed.
-- Requirements locked: user stories, validation rules, API contract, data model (refresh_tokens/login_audit), JWT/BCrypt, rate limiting; reCAPTCHA out-of-scope.
-- Architecture fixed: MVC structure under `backend/{prisma,src(config|middleware|modules|routes|shared),tests}`.
-- Implementation delivered for Tasks 1–20 (schema, config, middleware, services, routes, docs, tests) plus Docker stack.
-- JWT uses asymmetric keys and `jsonwebtoken` (CommonJS-friendly); env vars documented.
+- Architecture: MVC under `backend/{prisma,src(config|middleware|modules|routes|shared),tests}`.
+- JWT: RS256 with `jsonwebtoken`; refresh tokens hashed; audit log enabled.
+- Available courts: Booking uses `startTime/endTime` DateTime (no separate date column), overlap rule `start < bookingEnd && end > bookingStart`.
+- No caching for available courts; p95 target 300ms; blocking statuses: PENDING_PAYMENT, PAID.
+- Booking duration limits: min 60 minutes, max 180 minutes.
+- Cancel booking spec: only logged-in customer with paid booking can cancel; final booking status `CANCELED`.
+- Refund policy for cancel booking: cancel >= 24 hours before rental `startTime` in Vietnam timezone (GMT+7) => refund 70%; cancel < 24 hours => no refund and show reason.
+- Cancel scope confirmed: only `CUSTOMER` can cancel their own booking.
+- Cancel eligibility confirmed: only booking status `PAID` can be canceled by this flow.
+- Notification channel for cancel flow: in-app only.
+- Cancel implementation phase selected: Phase 1 (no real payment-gateway integration yet).
+- Phase 1 refund handling: internal/manual refund workflow with persisted refund amount/status only.
+- PaymentTransaction relation: 1-N (one Booking can have multiple PaymentTransaction attempts).
+- Payment attempts: at most one active PENDING per booking.
+- PaymentStatus enum: PENDING, PAID, FAILED, EXPIRED (no CANCELED/REFUNDED).
+- PaymentProvider enum: SEPAY only (Phase 1).
+- SePay QR dynamic with webhook + verify (confirmed).
+- Booking update rule: cancel existing PENDING attempt and create new QR.
+- Cancel PENDING only when booking updates affect price/time/court.
+- IPN mapping: prefer `payment_code`, fallback to `content` for bookingId.
+- IPN auth env var: `SEPAY_IPN_API_KEY`.
+- SePay QR uses static bank account + bank name env vars for QR URL.
+- Transfer content format: `SB_<bookingId>` (recommended).
+- Webhook success response: `200 OK` with empty body.
+- Verify endpoint response: return payment-only status fields (no booking status).
+- Task 10: use middleware-based validation for payment routes (supports params+body).
+- Task 11.1: use same queue naming/location conventions as existing booking queue.
+- Task 11.2: payment timeout job name = `payment-timeout`; helper names mirror booking style.
+- Payment-timeout worker: on timeout, set PaymentTransaction PENDING->EXPIRED and Booking PENDING_PAYMENT->EXPIRED.
+- Task 12.2: use dedicated runner (separate from app bootstrap) for payment-timeout worker.
 
 State:
   - Done:
-    - All rule docs reviewed; TDD + task breakdown completed for registration flow.
-    - Implemented Tasks 1–20 (schema, config, middleware, services, routes, docs) plus unit/integration/contract tests.
-    - Added backend Dockerfile and docker-compose for local stack.
-    - Switched JWT helper to `jsonwebtoken`.
-    - Rewrote `project_overview.md` with deeper detail per `project-overview-rule.mdc`.
-    - Drafted login TDD at `TDD/login-tdd.md`.
-    - Created login task breakdown at `task/login-task-breakdown.md`.
-    - Added `LOGIN` to `AuditAction` enum in `backend/prisma/schema.prisma` (Task 1).
-    - Added login validator schema in `backend/src/modules/auth/validators/login.validator.ts` (Task 3).
-    - Completed Task 2 (Prisma migration + generate, user-run) and Task 4 (validateLoginPayload helper).
-    - Added login route in `backend/src/routes/auth.routes.ts` (Task 5).
-    - Attached rate limit middleware to login route (Task 6).
-    - Added login controller handler in `backend/src/modules/auth/controllers/auth.controller.ts` (Task 7).
-    - Wired login controller to validator/service and ServiceError mapping (Task 8).
-    - Added ZodError handling for login payload validation (Task 9).
-    - Verified `createLoginAudit` repository helper already exists (Task 10).
-    - Verified `createRefreshToken` repository helper already exists (Task 11).
-    - Implemented login service with validation, token issuance, and audit persistence (Tasks 12-17).
-    - Added login metrics counters/histogram in `backend/src/shared/metrics.ts` (Task 18).
-    - Added structured login logs in `backend/src/modules/auth/services/auth.service.ts` (Task 19).
-    - Updated OpenAPI spec with login endpoint in `docs/api/auth.yaml` (Task 20).
-    - Added OpenAPI error examples for login in `docs/api/auth.yaml` (Task 21).
-    - Read `rule/continuity-ledger-rule.mdc` and will apply it on every request.
-    - Added DB connection check on server start in `backend/src/app.ts` with success/failure logging.
-    - Read `docs/CNM.pdf` spec and reviewed registration API for alignment.
-    - Updated login validation to require non-empty fields and adjusted login errors to match spec messages.
-    - Drafted TDD for available courts at `TDD/available-courts-tdd.md` based on `docs/CNM.pdf`.
-    - Added codebase alignment section to `TDD/available-courts-tdd.md`.
-    - Created detailed task breakdown at `task/available-courts-task-breakdown.md` from the available-courts TDD.
-    - Completed Task 1: added `CourtType` enum to `backend/prisma/schema.prisma`.
-    - Completed Task 2: added `BookingStatus` enum to `backend/prisma/schema.prisma`.
-    - Completed Task 3: added `Court` model to `backend/prisma/schema.prisma`.
-    - Completed Task 4: added `Booking` model and relation to `Court` in `backend/prisma/schema.prisma`.
-    - Chose Option A: `Booking` keeps `startTime`/`endTime` as `DateTime` and removes `date`.
-    - Completed Task 5: added booking availability index on (`courtId`, `startTime`, `endTime`, `status`).
-    - Completed Task 8: created `backend/src/routes/court.routes.ts`.
-    - Completed Task 9: registered `/api/courts` routes in `backend/src/app.ts`.
-    - Completed Task 10: added auth middleware in `backend/src/middleware/auth.ts`.
-    - Completed Task 11: added role-based middleware helper in `backend/src/middleware/auth.ts`.
-    - Completed Task 12: added `available-courts.validator.ts` for query validation.
-    - Completed Task 13: date format validation included in available courts validator.
-    - Completed Task 14: time format validation included in available courts validator.
-    - Completed Task 15: startTime < endTime validation included in available courts validator.
-    - Completed Task 16: operating hours validation (06:00-23:00) included in available courts validator.
-    - Completed Task 17: created `backend/src/modules/courts/repositories/court.repository.ts`.
-    - Completed Task 18: availability query implemented in court repository.
-    - Completed Task 19: overlap logic uses `startTime < end` and `endTime > start`.
-    - Completed Task 20: created `backend/src/modules/courts/services/available-courts.service.ts`.
-    - Completed Task 21: durationMinutes computed in available courts service.
-    - Completed Task 22: NO_AVAILABLE_COURTS error thrown when no results.
-    - Completed Task 23: created `backend/src/modules/courts/controllers/court.controller.ts`.
-    - Completed Task 24: handler uses `responseMiddleware` in courts controller.
-    - Completed Task 25: validation and service error mapping handled in courts controller.
-    - Completed Task 26: wired `/api/courts/available` with auth + role in `court.routes.ts`.
-    - Completed Task 27: added structured logs for available courts search and results.
-    - Completed Task 28: added available courts metrics and wired service timings/counters.
-    - Completed Task 37: added OpenAPI spec for courts at `docs/api/courts.yaml`.
-    - Completed Task 38: added error examples (400/401/403/404) in `docs/api/courts.yaml`.
-    - Completed Task 39: updated `docs/ops.md` with available courts logs/metrics.
-    - Completed Task 40: updated TDD with p95 target (300ms) and confirmed blocking statuses.
-    - Added seed script for `Court`/`Booking` at `backend/prisma/seed.ts` and wired `prisma:seed` in `backend/package.json`.
-    - Created backend Dockerfile at `infra/Docker/Dockerfile.BE`.
-    - Added bind mount for backend in `infra/docker-compose.yml`.
-    - Removed bind mount entries from `infra/docker-compose.yml` per user request.
-    - Updated `project_overview.md` to match latest codebase per `project-overview-rule.mdc`.
+    - Task breakdown created at `task/payment-task-breakdown.md` from TDD.
+    - TDD created at `TDD/payment-tdd.md` for payment flow spec.
+    - CLAUDE.md created for payment flow.
+    - SPEC.md created for payment flow.
+    - Reviewed Class-Payment-MOMO repo flow for comparison (payUrl, redirect, IPN webhook, signature verify).
+    - Implementation plan created at `docs/plans/2026-03-09-payment-implementation-plan.md`.
+    - Design doc created at `docs/plans/2026-03-09-payment-design.md`.
+    - Updated payment design to reflect 1-N attempts, single PENDING, enums (MOMO + PENDING/PAID/FAILED/EXPIRED).
+    - Wrote Task 1 implementation plan at `docs/plans/2026-03-09-payment-task1-implementation-plan.md`.
+    - Implemented PaymentTransaction + payment enums in `backend/prisma/schema.prisma` (Task 1).
+    - Marked Task 1 complete in `task/payment-task-breakdown.md`.
+    - Updated payment TDD and design to SePay QR dynamic (webhook + verify).
+    - Updated `task/payment-task-breakdown.md` to SePay QR dynamic tasks.
+    - Added design doc `docs/plans/2026-03-21-payment-provider-design.md`.
+    - Wrote Task 4 implementation plan at `docs/plans/2026-03-21-payment-task4-implementation-plan.md`.
+    - Wrote Task 5 implementation plan at `docs/plans/2026-03-21-payment-task5-implementation-plan.md`.
+    - Wrote Task 6 implementation plan at `docs/plans/2026-03-21-payment-task6-implementation-plan.md`.
+    - Added Task 7 design doc `docs/plans/2026-03-21-payment-task7-design.md`.
+    - Wrote Task 7 implementation plan at `docs/plans/2026-03-21-payment-task7-implementation-plan.md`.
+    - Added Task 8 design doc `docs/plans/2026-03-21-payment-task8-design.md`.
+    - Wrote Task 8 implementation plan at `docs/plans/2026-03-21-payment-task8-implementation-plan.md`.
+    - Implemented Task 8 validators in `backend/src/modules/payments/validators`.
+    - Implemented Task 7 payment service at `backend/src/modules/payments/services/payment.service.ts`.
+    - Implemented Task 1.1: PaymentProvider set to SEPAY and added qrString field.
+    - Implemented Task 3: added SePay env vars to `backend/src/config/env.ts` and `backend/.env.example`.
+    - Implemented Task 4: provider interface + registry in `backend/src/modules/payments/providers`.
+    - Implemented Task 5: SePay QR adapter in `backend/src/modules/payments/providers/sepay.provider.ts`.
+    - Added SePay env vars for IPN/API token/bank info and base URL notes in `.env.example`.
+    - Implemented Task 6: payment repository in `backend/src/modules/payments/repositories/payment.repository.ts`.
+    - Wrote Task 9 controllers design doc `docs/plans/2026-03-21-payment-task9-controllers-design.md`.
+    - Wrote Task 9 implementation plan `docs/plans/2026-03-21-payment-task9-controllers-plan.md`.
+    - Implemented Task 9 payment controllers in `backend/src/modules/payments/controllers` and added tests.
+    - Marked Task 9 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 10 routes design doc `docs/plans/2026-03-21-payment-task10-routes-design.md`.
+    - Wrote Task 10 implementation plan `docs/plans/2026-03-21-payment-task10-routes-plan.md`.
+    - Implemented Task 10 payment routes, middleware, and tests; mounted router in `backend/src/app.ts`.
+    - Marked Task 10.1-10.4 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 11.1 queue design (inline) and implementation plan `docs/plans/2026-03-21-payment-task11-queue-plan.md`.
+    - Implemented Task 11.1 payment queue definition in `backend/src/shared/queue.ts`.
+    - Marked Task 11.1 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 11.2 helpers design (inline) and implementation plan `docs/plans/2026-03-21-payment-task11-queue-helpers-plan.md`.
+    - Implemented Task 11.2 payment queue helpers in `backend/src/shared/queue.ts`.
+    - Marked Task 11.2 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 12.1 worker design (inline) and implementation plan `docs/plans/2026-03-21-payment-task12-timeout-worker-plan.md`.
+    - Implemented Task 12.1 payment-timeout worker in `backend/src/workers/payment-timeout.worker.ts`.
+    - Marked Task 12.1 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 12.2 runner design doc `docs/plans/2026-03-21-payment-task12-timeout-runner-design.md`.
+    - Wrote Task 12.2 runner implementation plan `docs/plans/2026-03-21-payment-task12-timeout-runner-plan.md`.
+    - Implemented Task 12.2 payment-timeout runner and script in `backend/package.json`.
+    - Marked Task 12.2 complete in `task/payment-task-breakdown.md`.
+    - Confirmed Task 12.3 uses existing retry/backoff defaults (attempts=3, exponential 5s).
+    - Wrote Task 13.1 enqueue design (inline) and implementation plan `docs/plans/2026-03-21-payment-task13-enqueue-timeout-plan.md`.
+    - Implemented Task 13.1 enqueue payment-timeout in `backend/src/modules/payments/services/payment.service.ts`.
+    - Marked Task 13.1 complete in `task/payment-task-breakdown.md`.
+    - Marked Task 13.2 complete as not required (enqueue occurs on QR creation).
+    - Confirmed `rule/continuity-ledger-rule.mdc` is read and will be applied on every new request.
+    - Auth register/login implemented with rate limit, validation, audits, metrics, logs, OpenAPI.
+    - Added `/api/courts/available` flow: auth middleware, role guard, validator, service, repo, controller, route, logs, metrics, OpenAPI.
+    - Prisma schema updated: CourtType, BookingStatus, Court, Booking (+ index); seed script added.
+    - Docker: created `infra/Docker/Dockerfile.BE`; docker-compose uses no bind mount.
+    - Updated `project_overview.md` to latest codebase.
+    - Read `rule/continuity-ledger-rule.mdc`.
+    - Confirmed user request: always apply `rule/continuity-ledger-rule.mdc` on every request.
+    - Task 1 bookings module folders created.
+    - Task 2 booking routes file created.
+    - Task 3 Booking model fields added (userId, unitPrice, totalPrice, durationMinutes, expiresAt).
+    - Task 4 Booking -> User relation and back-reference added.
+    - Task 5 BookingStatus updated to CANCELED + EXPIRED.
+    - Task 6 Booking indexes added (userId/createdAt, expiresAt/status).
+    - Task 7 migration generated and SQL reviewed (20260130135852_init).
+    - Task 8 seed updated for bookings with new fields.
+    - Task 9 create-booking validator added.
+    - Task 11 booking repository created (checkOverlap, createBooking).
+    - Task 12 overlap logic aligns with available-courts rule.
+    - Task 13 create-booking service added.
+    - Task 15 booking controller created.
+    - Task 16 controller follows shared response/error patterns.
+    - Task 17 booking route wired with middleware stack.
+    - Task 18 booking routes mounted in app.
+    - Task 19 audit log added for booking creation.
+    - Task 20 BullMQ queue setup added.
+    - Task 21 expire job enqueued on booking create.
+    - Task 22 booking expire worker implemented.
+    - Task 23 booking worker registered in app startup.
+    - Task 24 retry/backoff configured for booking expire jobs.
+    - Task 25 docs + env template updated for Redis and booking expire minutes.
+    - Task 26 booking expire minutes loaded from config/env.
+    - Task 27 booking metrics added.
+    - Task 28 structured booking create/expire logs added.
+    - Task 29 bookings OpenAPI spec added.
+    - Task 30 ops notes updated for Redis/BullMQ.
+    - Captured "H?y ð?t sân" specification from user input (preconditions, flow, alternative refund rules).
+    - User confirmed cancellation threshold/timezone: exactly 24 hours before `startTime`, timezone GMT+7 (Vietnam).
+    - User confirmed cancel scope/status: self-cancel only (`CUSTOMER` owns booking), eligible status `PAID` only.
+    - User requested recommendations for endpoint, refund architecture, observability, NFR, and test strategy.
+    - Gathered current payment-gateway references (Stripe/MoMo/ZaloPay/VNPAY) to advise easiest integration choice.
+    - User selected Phase 1 for cancel-booking (no payment gateway in this phase).
+    - API contract + error-code catalog proposal for cancel-booking Phase 1 approved by user.
+    - Drafted TDD document for cancel-booking Phase 1 at `TDD/cancel-booking-tdd.md`.
+    - User approved default planning preference (25-30 detailed tasks, dependency-aware, implementation -> test -> docs -> review).
+    - Created task breakdown for cancel-booking at `task/cancel-booking-task-breakdown.md`.
+    - Implemented cancel-booking Task 3: added Booking cancellation/refund fields in `backend/prisma/schema.prisma` (`canceledAt`, `canceledBy`, `cancelReason`, `refundPolicy`, `refundAmount`, `refundStatus`) and marked Task 3 completed.
+    - Validated updated Prisma schema successfully with `npx prisma validate --schema prisma/schema.prisma`.
+    - Implemented cancel-booking Task 4: added named Prisma relations for `canceledBy` to `User` (`BookingCanceledBy`) and disambiguated owner relation (`BookingUser`); updated checklist and validated schema.
+    - Implemented cancel-booking Task 5: added Prisma model `RefundTransaction` with `bookingId`, `amount`, `currency`, `policy`, `status`, `source`, `note`, timestamps and relation from `Booking`; updated checklist and validated schema.
+    - Implemented cancel-booking Task 6: added indexes `Booking(status,startTime)`, `Booking(userId,status,createdAt)`, `RefundTransaction(status,createdAt)`, and unique `RefundTransaction.bookingId`; updated checklist and validated schema.
+    - User requested a hard constraint: assistant must not run Prisma commands.
+    - Implemented cancel-booking Task 8: updated `backend/prisma/seed.ts` with two `PAID` bookings to cover refund windows (`>=24h`, `<24h`) and one non-cancellable `PENDING_PAYMENT` sample; marked Task 8 completed.
+    - Implemented cancel-booking Task 9: added refund enums/constants file `backend/src/modules/bookings/types/refund.ts` (`RefundPolicy`, `RefundStatus`) and marked Task 9 completed.
+    - Implemented cancel-booking Task 10: added cancellation policy defaults in config (`BOOKING_CANCEL_REFUND_RATE`, `BOOKING_CANCEL_MIN_HOURS_FOR_REFUND`, `BOOKING_CANCEL_TIMEZONE`) via `backend/src/config/env.ts` and `backend/.env.example`; marked Task 10 completed.
+    - Implemented cancel-booking Task 11: created `backend/src/modules/bookings/validators/cancel-booking.validator.ts` for `bookingId` UUID and `reason` (required, trimmed, 10-500 chars); updated both task checklists.
+    - Implemented cancel-booking Task 12: added validator unit tests at `backend/tests/modules/bookings/cancel-booking.validator.test.ts` for boundary lengths, whitespace-only reason, missing reason, and invalid UUID; updated both task checklists.
+    - Implemented cancel-booking Task 13: added repository methods in `backend/src/modules/bookings/repositories/booking.repository.ts` to load booking by id for cancel flow, verify ownership/status context, and execute transactional booking cancellation update; updated task checklists.
+    - Implemented cancel-booking Task 14: added repository methods `createRefundTransaction` and `executeCancelBookingWithRefundTransaction` to create linked `RefundTransaction` in the same DB transaction as booking cancellation update; updated both task checklists.
+    - Implemented cancel-booking Task 16: added `backend/src/modules/bookings/services/cancel-booking.service.ts` with role context validation (`CUSTOMER`), owner check, `PAID`-only eligibility, and deterministic conflicts (`BOOKING_NOT_FOUND`, `BOOKING_NOT_OWNED`, `BOOKING_ALREADY_CANCELED`, `BOOKING_STATUS_NOT_CANCELLABLE`); updated task checklists.
+    - Implemented cancel-booking Task 17: added `backend/src/modules/bookings/services/refund-calculator.ts` to compute `REFUND_70` vs `NO_REFUND` using configured timezone (`Asia/Ho_Chi_Minh`) and exact 24-hour threshold; updated both task checklists.
+    - Implemented cancel-booking Task 18: updated `cancel-booking.service.ts` to execute booking cancellation update and linked manual `RefundTransaction` creation in one transaction, persist cancellation metadata, and return refund outcome summary; updated both task checklists.
+    - Implemented cancel-booking Task 19: finalized deterministic/idempotent repeated-cancel mapping in service (`BOOKING_ALREADY_CANCELED` vs `BOOKING_STATUS_NOT_CANCELLABLE`) and updated both task checklists.
+    - Implemented cancel-booking Task 21: added `cancelBookingHandler` to `backend/src/modules/bookings/controllers/booking.controller.ts` with shared response/error conventions, user lookup, payload validation, and service error mapping; updated both task checklists.
+    - Implemented cancel-booking Task 22: wired `POST /api/bookings/:bookingId/cancel` in `backend/src/routes/booking.routes.ts` with middleware chain `authenticate -> requireRole(CUSTOMER) -> validate(cancelBookingValidator) -> cancelBookingHandler`; updated both task checklists.
+    - Completed cancel-booking Task 23: verified `backend/src/app.ts` already mounts `bookingRouter` at `/api/bookings`, so cancel route is available consistently without additional mount changes; updated both task checklists.
+    - Implemented cancel-booking Task 24: aligned cancel-flow error mapping to agreed codes (`BOOKING_NOT_FOUND`, `BOOKING_NOT_OWNED`, `BOOKING_STATUS_NOT_CANCELLABLE`, `BOOKING_ALREADY_CANCELED`, `INVALID_CANCEL_REASON`, `INTERNAL_ERROR`) across service/controller and updated both task checklists.
+    - Implemented cancel-booking Task 25: ensured `<24h` cancel path returns success semantics with `refundPolicy=NO_REFUND`, `refundAmount=0`, and terminal `refundStatus=COMPLETED_MANUAL`; updated both task checklists.
+    - Implemented cancel-booking Task 26: added structured logs in cancel service (`booking_cancel_requested`, `booking_cancel_rejected`, `booking_canceled`) without logging sensitive `reason` content; updated both task checklists.
+    - Implemented cancel-booking Task 27: added audit event logs `BOOKING_CANCEL_ATTEMPT` and `BOOKING_CANCELED` in cancel service and updated both task checklists.
+    - Implemented cancel-booking Task 28: added metrics definitions in `backend/src/shared/metrics.ts` (`bookings_canceled_total{result,refund_policy}`, `bookings_cancel_latency_ms`, `refund_manual_pending_total`) and instrumented cancel service to emit them; updated both task checklists.
+    - Implemented cancel-booking Task 29: integrated in-app notification creation after successful cancellation via `backend/src/shared/notifications.ts` and cancel service hook, with non-blocking warning log on notification failure; updated both task checklists.
+    - Implemented cancel-booking Task 30: updated `docs/api/bookings.yaml` with `POST /api/bookings/{bookingId}/cancel` path, request schema, success payload, and agreed error responses/codes; updated both task checklists.
+    - Implemented cancel-booking Task 32: added contract/schema assertions in `backend/tests/integration/cancel-booking.contract.test.ts` (OpenAPI success + error payload checks via `jest-openapi`) and updated both task checklists.
+    - Implemented cancel-booking Task 33: updated operational documentation in `docs/setup.md` (new cancel env vars) and `docs/ops.md` (manual refund workflow notes, cancel metrics/events) and updated both task checklists.
+    - Attempted to run validator test via `npx jest tests/modules/bookings/cancel-booking.validator.test.ts`, but test execution failed due missing TS/Jest transform config in the project (`Cannot use import statement outside a module`).
+    - Attempted `npx tsc --noEmit`; compile is currently blocked by existing project-level issues (stale Prisma client types before user-run generate/migration, Zod string options mismatch in current validator style, and missing BullMQ type resolution in local setup).
+    - Ran OpenSpec verify flow for `cancel-booking` using `openspec status --change cancel-booking --json` and `openspec instructions apply --change cancel-booking --json`.
+    - Verified artifacts: proposal/design/spec/tasks loaded from `openspec/changes/cancel-booking/*`; task list shows 34/35 done with pending task `2.5` (generate/review Prisma migration SQL).
+    - Checked current migration files; latest migration `backend/prisma/migrations/20260130135852_init/migration.sql` does not include cancel-booking schema additions (`canceledAt`, `RefundTransaction`, etc.).
+    - Re-ran targeted tests for cancel-booking via `npx jest --runTestsByPath ...`; both suites fail due missing TS/Jest transform configuration, so runtime verification remains blocked.
+    - User ran Prisma generate/migrate; new migration folder `backend/prisma/migrations/20260206044427_init` created and applied.
+    - `openspec/changes/cancel-booking/tasks.md` now has all tasks checked (2.5 complete).
+    - Updated `task/cancel-booking-task-breakdown.md` Task 7 to checked.
+    - Archived change `cancel-booking` to `openspec/changes/archive/2026-02-06-cancel-booking` (artifacts complete; no main specs to sync).
   - Now:
-    - Ready for remaining tests or any follow-up tasks.
+    - Apply `rule/continuity-ledger-rule.mdc` each request; maintain `CONTINUITY.md`.
+    - Provide Ledger Snapshot at start of replies.
+    - Simplified `docs/api/courts.yaml` by removing schemas and using examples only.
+    - User approved approach 1: structured fields for correlation IDs in logs.
+    - Starting Task 14.1 brainstorming/design for SePay webhook signature validation middleware.
+    - Comparing middleware validation approach: reuse SepayProvider vs inline check.
+    - User wants middleware only on /api/payments/webhooks/sepay and prefers 401 empty body on invalid signature.
+    - User chose Approach A: middleware uses SepayProvider.validateSignature.
+    - Wrote Task 14.1 design doc at docs/plans/2026-03-21-payment-task14-webhook-signature-design.md.
+    - Wrote Task 14.1 implementation plan at docs/plans/2026-03-21-payment-task14-webhook-signature-plan.md.
+    - Implemented SePay webhook signature middleware, wired route, and added tests; marked Tasks 14.1-14.2 done.
+    - Starting Task 15.1 brainstorming for late webhook handling when booking already EXPIRED.
+    - User requested explanation of late webhook handling options.
+    - User chose option 1: accept PAID and flag manual refund for late webhook.
+    - User requested explanation of where to store manual refund flag (meta vs schema field).
+    - User asked which storage approach is more reasonable.
+    - User clarified late payment meaning (paid after payment validity window).
+    - User asked how payment can occur after expiry (late transfer reasoning).
+    - User acknowledged explanation; ready to continue Task 15.1 decisions.
+    - User confirmed booking should remain EXPIRED on late PAID; refund flag stored in PaymentTransaction.meta.
+    - User chose Approach A for late webhook handling.
+    - Wrote Task 15.1 design doc at docs/plans/2026-03-22-payment-task15-late-webhook-design.md.
+    - Wrote Task 15.1 implementation plan at docs/plans/2026-03-22-payment-task15-late-webhook-plan.md.
+    - Implemented late webhook handling with refund flag in meta; added service unit test; marked Tasks 15.1-15.2 done.
+    - Wrote Task 16.1 design doc at `docs/plans/2026-03-22-payment-task16-correlation-logs-design.md`.
+    - Wrote Task 16.1 implementation plan at `docs/plans/2026-03-22-payment-task16-correlation-logs-plan.md`.
+    - Implemented Task 16.1: added correlation IDs to payment controller logs.
+    - Marked Task 16.1 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 16.2 design doc at `docs/plans/2026-03-22-payment-task16-structured-logs-design.md`.
+    - Wrote Task 16.2 implementation plan at `docs/plans/2026-03-22-payment-task16-structured-logs-plan.md`.
+    - Implemented Task 16.2: added structured payment logs for QR create, webhook received/processed, verify outcomes.
+    - Marked Task 16.2 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 17.1 design doc at `docs/plans/2026-03-22-payment-task17-metrics-design.md`.
+    - Wrote Task 17.1 implementation plan at `docs/plans/2026-03-22-payment-task17-metrics-plan.md`.
+    - Implemented Task 17.1: added payment metrics in `backend/src/shared/metrics.ts`.
+    - Marked Task 17.1 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 17.2 design doc at `docs/plans/2026-03-22-payment-task17-emit-metrics-design.md`.
+    - Wrote Task 17.2 implementation plan at `docs/plans/2026-03-22-payment-task17-emit-metrics-plan.md`.
+    - Implemented Task 17.2: emitted payment metrics in services and timeout worker.
+    - Marked Task 17.2 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 18.1 design doc at `docs/plans/2026-03-22-payment-task18-openapi-qr-design.md`.
+    - Wrote Task 18.1 implementation plan at `docs/plans/2026-03-22-payment-task18-openapi-qr-plan.md`.
+    - Implemented Task 18.1: added `docs/api/payments.yaml` with QR endpoint OpenAPI.
+    - Marked Task 18.1 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 18.2 design doc at `docs/plans/2026-03-22-payment-task18-openapi-verify-design.md`.
+    - Wrote Task 18.2 implementation plan at `docs/plans/2026-03-22-payment-task18-openapi-verify-plan.md`.
+    - Implemented Task 18.2: added verify endpoint to `docs/api/payments.yaml`.
+    - Marked Task 18.2 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 18.3 design doc at `docs/plans/2026-03-22-payment-task18-openapi-sepay-webhook-design.md`.
+    - Wrote Task 18.3 implementation plan at `docs/plans/2026-03-22-payment-task18-openapi-sepay-webhook-plan.md`.
+    - Implemented Task 18.3: added SePay webhook endpoint to `docs/api/payments.yaml`.
+    - Marked Task 18.3 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 19.1 design doc at `docs/plans/2026-03-22-payment-task19-setup-envvars-design.md`.
+    - Wrote Task 19.1 implementation plan at `docs/plans/2026-03-22-payment-task19-setup-envvars-plan.md`.
+    - Implemented Task 19.1: added payment env vars to `docs/setup.md`.
+    - Marked Task 19.1 complete in `task/payment-task-breakdown.md`.
+    - Wrote Task 19.2 design doc at `docs/plans/2026-03-22-payment-task19-ops-runbook-design.md`.
+    - Wrote Task 19.2 implementation plan at `docs/plans/2026-03-22-payment-task19-ops-runbook-plan.md`.
+    - Implemented Task 19.2: added payments webhook + timeout worker runbook to `docs/ops.md`.
+    - Marked Task 19.2 complete in `task/payment-task-breakdown.md`.
+    - Fixed Zod v4 validator error in `backend/src/modules/bookings/validators/cancel-booking.validator.ts`.
+    - Wrote design doc `docs/plans/2026-03-23-zod-v4-cancel-booking-validator-design.md`.
+    - Wrote plan `docs/plans/2026-03-23-zod-v4-cancel-booking-validator-plan.md`.
+    - Fixed Zod v4 typing error in `backend/src/modules/payments/middleware/validate-payment-request.ts`.
+    - Wrote design doc `docs/plans/2026-03-23-payment-validate-request-typing-design.md`.
+    - Wrote plan `docs/plans/2026-03-23-payment-validate-request-typing-plan.md`.
+    - Fixed TS2322 params type in `backend/src/modules/payments/middleware/validate-payment-request.ts`.
+    - Wrote design doc `docs/plans/2026-03-23-payment-validate-request-params-design.md`.
+    - Wrote plan `docs/plans/2026-03-23-payment-validate-request-params-plan.md`.
   - Next:
-    - Proceed with remaining tasks you request.
+    - Re-import `docs/api/courts.yaml` to confirm request creation.
+    - Decide what to commit vs ignore (especially `backend/.env` and tooling folders), then commit and push.
 
 Open questions (`UNCONFIRMED` if needed):
-- None.
+- Decision: log end-to-end payment flow with correlation IDs to pinpoint errors. (CONFIRMED)
+- Decision: implement MOMO sandbox now; keep architecture open for future gateways. (CONFIRMED)
+- Decision: use webhook plus client callback (server-side verify) for payment confirmation. (CONFIRMED)
+- Decision: payment session created only when user clicks Pay. (CONFIRMED)
+- Decision: separate payment queue/worker for payment timeouts to support future gateways. (CONFIRMED)
+- User asked whether 1-minute hold window is too short; needs recommendation. (UNCONFIRMED)
+- Need decision on peak-hour feature spec (separate owner feature: window/threshold/UX). (UNCONFIRMED)
+- Decision: only PENDING_PAYMENT bookings can initiate payment. (CONFIRMED)
+- Decision: design open for multiple payment gateways from the start. (CONFIRMED)
+- Hold window chosen: 10 minutes. (CONFIRMED)
+- Recommended hold window likely 8-10 minutes; awaiting user selection. (UNCONFIRMED)
+- MoMo fees for using sandbox/production? (UNCONFIRMED)
+- SePay pricing: confirm no-transaction-fee claim vs any subscription/conditions. (UNCONFIRMED)
+- SePay free plan details from user screenshot: 0đ/month, 50 transactions/month, webhook/API, payment gateway, 10 banks; need to confirm overage fees/production eligibility. (UNCONFIRMED)
 
 Working set (files/ids/commands):
-- `rule/continuity-ledger-rule.mdc`
-- `rule/implementation-rule.mdc`
-- `rule/project-overview-rule.mdc`
-- `rule/task-breakdown-rule.mdc`
-- `rule/technical-design-documentation-rule.mdc`
 - `CONTINUITY.md`
-- `project_overview.md`
-- `docs/CNM (1).pdf`
-- `TDD/login-tdd.md`
-- `task/login-task-breakdown.md`
+- `task/payment-task-breakdown.md`
+- `TDD/payment-tdd.md`
+- `SPEC.md`
+- `CLAUDE.md`
+- `docs/plans/2026-03-09-payment-implementation-plan.md`
+- `docs/plans/2026-03-09-payment-design.md`
+- `C:\Users\yasuo\.agents\skills\brainstorming\SKILL.md`
 - `backend/prisma/schema.prisma`
-- `backend/src/modules/auth/validators/login.validator.ts`
-- `backend/src/modules/auth/services/auth.service.ts`
-- `docs/api/auth.yaml`
+- `backend/prisma/seed.ts`
+- `backend/prisma/seed.ts`
+- `backend/src/app.ts`
+- `docs/ops.md`
+- `project_overview.md`
+- `docs/CNM.pdf`
+- `TDD/booking-tdd.md`
+- `task/booking-task-breakdown.md`
+- `rule/continuity-ledger-rule.mdc`
+- `backend/src/modules/bookings/controllers`
+- `backend/src/modules/bookings/services`
+- `backend/src/modules/bookings/repositories`
+- `backend/src/modules/bookings/validators`
+- `backend/src/modules/bookings/types`
+- `backend/src/routes/booking.routes.ts`
+- `backend/prisma/migrations/20260130135852_init/migration.sql`
+- `backend/src/modules/bookings/validators/create-booking.validator.ts`
+- `backend/src/modules/bookings/repositories/booking.repository.ts`
+- `backend/src/modules/bookings/services/create-booking.service.ts`
+- `infra/docker-compose.yml`
+- `backend/prisma/schema.prisma`
+- `infra/Docker/Dockerfile.BE`
+- `docs/setup.md`
+- `backend/.env.example`
+- `backend/src/config/env.ts`
+- `backend/src/shared/queue.ts`
 - `backend/src/shared/metrics.ts`
-- `backend/src/modules/auth/services/auth.service.ts`
+- `docs/api/bookings.yaml`
+- `docs/ops.md`
+- `backend/src/shared/queue.ts`
+- `backend/package.json`
+- `backend/src/modules/bookings/services/create-booking.service.ts`
+- `backend/src/workers/booking-expire.worker.ts`
+- `backend/src/app.ts`
+- `backend/src/workers/booking-expire.runner.ts`
+- `backend/package.json`
+- `backend/src/modules/bookings/controllers/booking.controller.ts`
+- `backend/src/routes/booking.routes.ts`
+- `backend/src/middleware/validate.ts`
+- `backend/src/app.ts`
+- `backend/src/modules/bookings/services/create-booking.service.ts`
+- `openspec/changes/cancel-booking/proposal.md`
+- `openspec/changes/cancel-booking/design.md`
+- `openspec/changes/cancel-booking/specs/cancel-booking/spec.md`
+- `openspec/changes/cancel-booking/tasks.md`
+- `backend/tests/integration/cancel-booking.contract.test.ts`
+- `backend/tests/modules/bookings/cancel-booking.validator.test.ts`
+
+- Decision: start with sandbox environment; later switch to production. (CONFIRMED)
+- Decision: choose architecture Option B (Provider-Plugin). (CONFIRMED)
+
+Recent updates:
+- Checked git status: repo has many modified and untracked files; branch is ahead 11 commits. `.env` is modified (secrets) and many new docs/api/postman/payment files are untracked.

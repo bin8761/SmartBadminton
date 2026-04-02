@@ -1,0 +1,13 @@
+.specstory
+.cursorindexingignore
+.cursor
+backend/keys/
+node_modules/
+package-lock.json
+migrations/
+# rule/
+# CONTINUITY.md
+# TDD/
+# task/
+# CNM.pdf
+script.txt

@@ -1,0 +1,322 @@
+{
+  "version": 1,
+  "name": "Đặt sân + thanh toán.",
+  "description": "",
+  "flow": {
+    "description": "",
+    "nodes": {
+      "Uh12FF1G": {
+        "type": "ev/endpoint@3",
+        "pos": {
+          "x": 88,
+          "y": -368
+        },
+        "config": {
+          "inputs": [
+            {
+              "id": "1ZHpopTJ",
+              "type": "value/reference@2",
+              "kind": "reference",
+              "value": "",
+              "key": "Input 1",
+              "__noIn": true
+            }
+          ],
+          "data": "",
+          "language": "json",
+          "allowAnyType": false,
+          "inputs__expanded": true
+        },
+        "ui": {
+          "data": {
+            "triggerType": "ev/endpoint@3"
+          },
+          "namedInputsExpanded": true
+        }
+      },
+      "yq4XRUIZ": {
+        "type": "task/http-request@1",
+        "pos": {
+          "x": -224,
+          "y": -168
+        },
+        "config": {
+          "element": {
+            "id": "2c39eBadFB99BFBad10EDbcD",
+            "collection": "AE0B9dDDcbA79cB2eF35BeA5",
+            "name": "Login user",
+            "method": "POST"
+          },
+          "environment": "45aab171-4e40-4721-9c4f-0359b967a30f",
+          "parseBody": "auto",
+          "requestVariables": [],
+          "scriptsModifyEnvVars": true,
+          "trackGlobalEnvironment": true,
+          "requestVariables__expanded": true
+        },
+        "ui": {
+          "data": {},
+          "namedInputsExpanded": true
+        }
+      },
+      "NDemnQh_": {
+        "type": "task/http-request@1",
+        "pos": {
+          "x": 520,
+          "y": -160
+        },
+        "config": {
+          "element": {
+            "id": "9F7d7ef28efb001bC596C6C7",
+            "collection": "AE0B9dDDcbA79cB2eF35BeA5",
+            "name": "Get available courts",
+            "method": "GET"
+          },
+          "environment": "45aab171-4e40-4721-9c4f-0359b967a30f",
+          "parseBody": "auto",
+          "requestVariables": [],
+          "scriptsModifyEnvVars": true,
+          "trackGlobalEnvironment": true,
+          "requestVariables__expanded": true
+        },
+        "ui": {
+          "data": {},
+          "namedInputsExpanded": true
+        }
+      },
+      "aey2xcHd": {
+        "type": "task/http-request@1",
+        "pos": {
+          "x": 1224,
+          "y": -160
+        },
+        "config": {
+          "element": {
+            "id": "1d2d1c741eDa49AD155331AF",
+            "collection": "AE0B9dDDcbA79cB2eF35BeA5",
+            "name": "Create booking",
+            "method": "POST"
+          },
+          "environment": "45aab171-4e40-4721-9c4f-0359b967a30f",
+          "parseBody": "auto",
+          "requestVariables": [],
+          "scriptsModifyEnvVars": true,
+          "trackGlobalEnvironment": true,
+          "requestVariables__expanded": true
+        },
+        "ui": {
+          "data": {},
+          "namedInputsExpanded": true
+        }
+      },
+      "MAwIhcjz": {
+        "type": "task/http-request@1",
+        "pos": {
+          "x": 1664,
+          "y": -176
+        },
+        "config": {
+          "element": {
+            "id": "eBeFCe3EDCd5d7e8CFcC89Ef",
+            "collection": "AE0B9dDDcbA79cB2eF35BeA5",
+            "name": "Create payment QR",
+            "method": "POST"
+          },
+          "environment": "45aab171-4e40-4721-9c4f-0359b967a30f",
+          "parseBody": "auto",
+          "requestVariables": [],
+          "scriptsModifyEnvVars": true,
+          "trackGlobalEnvironment": true,
+          "requestVariables__expanded": true
+        },
+        "ui": {
+          "data": {},
+          "namedInputsExpanded": true
+        }
+      },
+      "RnWbTPFm": {
+        "type": "task/http-request@1",
+        "pos": {
+          "x": 2072,
+          "y": -176
+        },
+        "config": {
+          "element": {
+            "id": "f3b6CCE8Ee3E9791BC16A328",
+            "collection": "AE0B9dDDcbA79cB2eF35BeA5",
+            "name": "SePay webhook",
+            "method": "POST"
+          },
+          "environment": "45aab171-4e40-4721-9c4f-0359b967a30f",
+          "parseBody": "auto",
+          "requestVariables": [],
+          "scriptsModifyEnvVars": true,
+          "trackGlobalEnvironment": true,
+          "requestVariables__expanded": true
+        },
+        "ui": {
+          "data": {},
+          "namedInputsExpanded": true
+        }
+      },
+      "yd0a3Mct": {
+        "type": "logic/manipulate@1",
+        "pos": {
+          "x": 120,
+          "y": -168
+        },
+        "size": {
+          "width": 304,
+          "height": 104
+        },
+        "config": {
+          "language": "ts",
+          "query": "",
+          "tscript": "const now = new Date();\r\nconst gmt7 = new Date(now.getTime() + 7 * 60 * 60 * 1000);\r\n\r\nconst pad = (n) => String(n).padStart(2, \"0\");\r\nconst date = `${gmt7.getUTCFullYear()}-${pad(gmt7.getUTCMonth()+1)}-${pad(gmt7.getUTCDate())}`;\r\n\r\nconst start = new Date(gmt7.getTime() + 2 * 60 * 60 * 1000);\r\nconst end = new Date(gmt7.getTime() + 3 * 60 * 60 * 1000);\r\n\r\nconst startTime = `${pad(start.getUTCHours())}:${pad(start.getUTCMinutes())}`;\r\nconst endTime = `${pad(end.getUTCHours())}:${pad(end.getUTCMinutes())}`;\r\n\r\npm.collectionVariables.set(\"date\", date);\r\npm.collectionVariables.set(\"startTime\", startTime);\r\npm.collectionVariables.set(\"endTime\", endTime);\r\n",
+          "variables": [
+            {
+              "id": "ypmr5ACg",
+              "type": "value/reference@2",
+              "kind": "reference",
+              "value": "",
+              "key": "value1",
+              "__noIn": true
+            }
+          ],
+          "variables__expanded": true
+        },
+        "ui": {
+          "data": {
+            "blockTitle": "date"
+          },
+          "namedInputsExpanded": true
+        }
+      },
+      "NwJbNWHZ": {
+        "type": "logic/manipulate@1",
+        "pos": {
+          "x": 848,
+          "y": -160
+        },
+        "size": {
+          "width": 304,
+          "height": 104
+        },
+        "config": {
+          "language": "ts",
+          "query": "",
+          "tscript": "const json = pm.response.json();\r\nconst courts = json?.data?.courts || [];\r\nif (!courts.length) {\r\n  throw new Error(\"No available courts\");\r\n}\r\npm.collectionVariables.set(\"courtId\", courts[0].id);\r\n",
+          "variables": [
+            {
+              "id": "IiStBghx",
+              "type": "value/reference@2",
+              "kind": "reference",
+              "value": "",
+              "key": "value1",
+              "__noIn": true
+            }
+          ],
+          "variables__expanded": true
+        },
+        "ui": {
+          "data": {
+            "blockTitle": "courtsID"
+          },
+          "namedInputsExpanded": true
+        }
+      }
+    },
+    "connections": {
+      "DGTSyDMG": {
+        "source": "H-ldHZJN",
+        "sourcePort": "@",
+        "target": "Uh12FF1G",
+        "targetPort": "inputs|1ZHpopTJ"
+      },
+      "iWAly9CV": {
+        "source": "yq4XRUIZ",
+        "target": "yd0a3Mct",
+        "sourcePort": "success",
+        "targetPort": "variables|ypmr5ACg"
+      },
+      "OP4N7pNg": {
+        "source": "yd0a3Mct",
+        "target": "NDemnQh_",
+        "sourcePort": "out",
+        "targetPort": "AI"
+      },
+      "PQRVP4tX": {
+        "source": "NDemnQh_",
+        "target": "NwJbNWHZ",
+        "sourcePort": "success",
+        "targetPort": "variables|IiStBghx"
+      },
+      "qVVHIJ4Z": {
+        "source": "NwJbNWHZ",
+        "target": "aey2xcHd",
+        "sourcePort": "out",
+        "targetPort": "AI"
+      },
+      "EW4FiAsC": {
+        "source": "aey2xcHd",
+        "target": "MAwIhcjz",
+        "sourcePort": "success",
+        "targetPort": "AI"
+      },
+      "s-DVqTX8": {
+        "source": "MAwIhcjz",
+        "target": "RnWbTPFm",
+        "sourcePort": "success",
+        "targetPort": "AI"
+      }
+    },
+    "annotations": {},
+    "groups": {},
+    "webhook": {
+      "payloadContent": "body-only",
+      "responseType": "default"
+    },
+    "forms": {},
+    "modules": {},
+    "io": {
+      "H-ldHZJN": {
+        "type": "input",
+        "name": "Input 1",
+        "typeDef": {
+          "type": "string"
+        }
+      }
+    },
+    "ports": {},
+    "meta": {},
+    "scenes": {},
+    "scenarios": {
+      "7FanJIme": {
+        "name": "Start Trigger",
+        "type": "scenario@2",
+        "createdOn": 1774450963020,
+        "updatedOn": 1774450963020,
+        "data": {
+          "H-ldHZJN": {
+            "id": "H-ldHZJN",
+            "key": "Input 1",
+            "value": "",
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "config": {
+      "definitions": {},
+      "constants": {}
+    }
+  },
+  "lockbox": {},
+  "info": {
+    "_postman_id": "61566030-239c-4550-9705-44aad990294a"
+  },
+  "_postman_exported_at": "2026-03-26T03:13:02.167Z",
+  "_postman_exported_using": "Postman/Local Mode"
+}

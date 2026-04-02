@@ -1,0 +1,21 @@
+$kind: collection
+name: SmartBadminton API
+variables:
+  baseUrl: ""
+  accessToken: ""
+  refreshToken: ""
+  userId: ""
+  username: ""
+  courtId: ""
+  date: ""
+  startTime: ""
+  endTime: ""
+  bookingId: ""
+  bookingStatus: ""
+  paymentTransactionId: ""
+  paymentQrString: ""
+  paymentExpiresAt: ""
+  apiKey: ""
+  cancelRefundPolicy: ""
+  cancelRefundAmount: ""
+  refundTransactionId: ""
